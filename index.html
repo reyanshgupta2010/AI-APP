@@ -3,114 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What's in My Fridge? - Recipe Alchemist</title>
+    <title>What's in My Fridge? Recipe Alchemist</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <h1>🔮 What's in My Fridge?</h1>
-                <p class="subtitle">Recipe Alchemist - Transform your ingredients into culinary magic</p>
+    <div class="app-shell">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">Recipe Alchemist</p>
+                <h1>What's in My Fridge?</h1>
             </div>
+            <p class="creator">Created by Reyansh</p>
         </header>
 
-        <main class="main-content">
-            <!-- Ingredients Section -->
-            <section class="ingredients-section">
-                <h2>Your Ingredients</h2>
-                <div class="ingredient-input-group">
-                    <input 
-                        type="text" 
-                        id="ingredientInput" 
-                        placeholder="Enter an ingredient (e.g., chicken, tomato, pasta)" 
-                        class="ingredient-input"
-                    >
-                    <button id="addIngredientBtn" class="btn btn-add">+ Add</button>
+        <main class="workspace">
+            <section class="input-panel" aria-labelledby="ingredientsTitle">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">Fridge scan</p>
+                        <h2 id="ingredientsTitle">Turn loose ingredients into dinner.</h2>
+                    </div>
+                    <div class="fridge-art" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
                 </div>
-                <div id="ingredientsList" class="ingredients-list"></div>
-                <p class="hint">Press Enter or click Add to add ingredients</p>
-            </section>
 
-            <!-- Filters Section -->
-            <section class="filters-section">
-                <h2>Preferences</h2>
-                <div class="filters-grid">
-                    <!-- Prep Time Filter -->
+                <label class="field-label" for="ingredientInput">Ingredients</label>
+                <div class="ingredient-input-group">
+                    <input
+                        type="text"
+                        id="ingredientInput"
+                        placeholder="rice, spinach, eggs, paneer..."
+                        autocomplete="off"
+                    >
+                    <button id="addIngredientBtn" class="icon-button add-button" type="button" aria-label="Add ingredient">+</button>
+                </div>
+
+                <div id="ingredientsList" class="ingredients-list" aria-live="polite"></div>
+                <p class="hint">Add at least two ingredients for a stronger recipe.</p>
+
+                <div class="filters-grid" aria-label="Recipe filters">
                     <div class="filter-group">
-                        <label for="prepTimeFilter">Prep Time</label>
-                        <select id="prepTimeFilter" class="filter-select">
-                            <option value="any">Any</option>
-                            <option value="15">≤ 15 minutes</option>
-                            <option value="30">≤ 30 minutes</option>
-                            <option value="60">≤ 1 hour</option>
-                            <option value="120">≤ 2 hours</option>
+                        <label for="prepTimeFilter">Prep time</label>
+                        <select id="prepTimeFilter">
+                            <option value="20">20 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">1 hour</option>
                         </select>
                     </div>
 
-                    <!-- Cooking Skill Filter -->
                     <div class="filter-group">
-                        <label for="skillFilter">Cooking Skill</label>
-                        <select id="skillFilter" class="filter-select">
-                            <option value="any">Any</option>
-                            <option value="beginner">Beginner</option>
+                        <label for="skillFilter">Skill</label>
+                        <select id="skillFilter">
+                            <option value="beginner" selected>Beginner</option>
                             <option value="intermediate">Intermediate</option>
                             <option value="advanced">Advanced</option>
                         </select>
                     </div>
 
-                    <!-- Dietary Restrictions -->
                     <div class="filter-group">
-                        <label for="dietaryFilter">Dietary Restrictions</label>
-                        <select id="dietaryFilter" class="filter-select">
-                            <option value="none">None</option>
+                        <label for="dietaryFilter">Diet</label>
+                        <select id="dietaryFilter">
+                            <option value="flexible" selected>Flexible</option>
                             <option value="vegetarian">Vegetarian</option>
                             <option value="vegan">Vegan</option>
-                            <option value="gluten-free">Gluten-Free</option>
-                            <option value="keto">Keto</option>
-                            <option value="paleo">Paleo</option>
+                            <option value="gluten-free">Gluten-free</option>
+                            <option value="high-protein">High-protein</option>
                         </select>
                     </div>
                 </div>
-            </section>
 
-            <!-- Generate Button -->
-            <div class="generate-section">
-                <button id="generateBtn" class="btn btn-generate">✨ Generate Recipe</button>
-            </div>
-
-            <!-- Recipe Display Section -->
-            <section id="recipeSection" class="recipe-section hidden">
-                <h2>Your Recipe</h2>
-                
-                <div id="recipeContent" class="recipe-content">
-                    <!-- Recipe will be loaded here -->
+                <div class="action-row">
+                    <button id="generateBtn" class="primary-button" type="button">Generate recipe</button>
+                    <button id="clearBtn" class="secondary-button" type="button">Clear</button>
                 </div>
 
-                <!-- Cooking Steps Checklist -->
+                <p id="errorMessage" class="error-message" role="alert"></p>
+            </section>
+
+            <section id="recipeSection" class="recipe-panel empty" aria-live="polite">
+                <div id="emptyState" class="empty-state">
+                    <p class="eyebrow">Waiting for ingredients</p>
+                    <h2>Your recipe will appear here.</h2>
+                    <p>Add the odd survivors from your fridge, choose your constraints, and let the alchemist do the rest.</p>
+                </div>
+
+                <div id="loadingSpinner" class="loading hidden">
+                    <div class="spinner" aria-hidden="true"></div>
+                    <p>Building a viable recipe...</p>
+                </div>
+
+                <div id="recipeContent" class="recipe-content hidden"></div>
+
                 <div id="stepsSection" class="steps-section hidden">
-                    <h3>Cooking Steps</h3>
-                    <div id="stepsList" class="steps-list">
-                        <!-- Steps will be loaded here -->
+                    <div class="steps-header">
+                        <h3>Cooking checklist</h3>
+                        <p id="progressText">0 of 0 done</p>
                     </div>
+                    <div id="stepsList" class="steps-list"></div>
                 </div>
             </section>
-
-            <!-- Loading Spinner -->
-            <div id="loadingSpinner" class="loading hidden">
-                <div class="spinner"></div>
-                <p>Brewing your recipe magic...</p>
-            </div>
-
-            <!-- Error Message -->
-            <div id="errorMessage" class="error-message hidden"></div>
         </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>🔮 Recipe Alchemist - Powered by AI ✨</p>
-        </footer>
     </div>
 
     <script src="script.js"></script>

@@ -1,314 +1,366 @@
-// Recipe Alchemist - Main Application
-
-const API_KEY = 'YOUR_API_KEY_HERE'; // Replace with your OpenAI or Hugging Face API key
 const ingredients = [];
 
-// DOM Elements
-const ingredientInput = document.getElementById('ingredientInput');
-const addIngredientBtn = document.getElementById('addIngredientBtn');
-const ingredientsList = document.getElementById('ingredientsList');
-const generateBtn = document.getElementById('generateBtn');
-const recipeSection = document.getElementById('recipeSection');
-const recipeContent = document.getElementById('recipeContent');
-const stepsSection = document.getElementById('stepsSection');
-const stepsList = document.getElementById('stepsList');
-const loadingSpinner = document.getElementById('loadingSpinner');
-const errorMessage = document.getElementById('errorMessage');
+const pantryBasics = ["salt", "pepper", "oil", "water"];
+const ingredientInput = document.getElementById("ingredientInput");
+const addIngredientBtn = document.getElementById("addIngredientBtn");
+const clearBtn = document.getElementById("clearBtn");
+const ingredientsList = document.getElementById("ingredientsList");
+const generateBtn = document.getElementById("generateBtn");
+const recipeSection = document.getElementById("recipeSection");
+const emptyState = document.getElementById("emptyState");
+const recipeContent = document.getElementById("recipeContent");
+const stepsSection = document.getElementById("stepsSection");
+const stepsList = document.getElementById("stepsList");
+const loadingSpinner = document.getElementById("loadingSpinner");
+const errorMessage = document.getElementById("errorMessage");
+const progressText = document.getElementById("progressText");
 
-// Event Listeners
-addIngredientBtn.addEventListener('click', addIngredient);
-ingredientInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') addIngredient();
+const recipeStyles = {
+    vegetarian: {
+        title: "Garden Skillet",
+        method: "saute into a bright, satisfying skillet meal",
+        sauce: "lemon, cracked pepper, and a spoon of yogurt or chutney",
+        avoid: ["chicken", "fish", "beef", "pork", "mutton"],
+        fallback: "paneer or mushrooms"
+    },
+    vegan: {
+        title: "Plant-Powered Toss",
+        method: "pan-roast into a hearty plant-based bowl",
+        sauce: "lime, toasted spices, and a splash of coconut milk or olive oil",
+        avoid: ["chicken", "fish", "egg", "eggs", "paneer", "cheese", "milk", "yogurt", "beef", "pork"],
+        fallback: "tofu or chickpeas"
+    },
+    "gluten-free": {
+        title: "No-Wheat Comfort Bowl",
+        method: "simmer into a naturally gluten-free bowl",
+        sauce: "herbs, lemon, and warm spices",
+        avoid: ["bread", "pasta", "noodles", "wheat", "roti"],
+        fallback: "rice or potatoes"
+    },
+    "high-protein": {
+        title: "Protein Plate",
+        method: "sear and fold into a filling protein-forward plate",
+        sauce: "garlic, chili, and a cooling yogurt-style finish",
+        avoid: [],
+        fallback: "eggs, paneer, tofu, or beans"
+    },
+    flexible: {
+        title: "Fridge Rescue",
+        method: "transform into a balanced one-pan dinner",
+        sauce: "garlic, lemon, herbs, and a little heat",
+        avoid: [],
+        fallback: "your main ingredient"
+    }
+};
+
+const skillNotes = {
+    beginner: "Keep the heat medium, taste often, and use one pan.",
+    intermediate: "Build flavor in layers, then finish with acid for lift.",
+    advanced: "Char one ingredient deeply, deglaze the pan, and plate with contrast."
+};
+
+addIngredientBtn.addEventListener("click", addIngredient);
+clearBtn.addEventListener("click", clearAll);
+generateBtn.addEventListener("click", generateRecipe);
+ingredientInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        addIngredient();
+    }
 });
-generateBtn.addEventListener('click', generateRecipe);
 
-// Add ingredient to list
 function addIngredient() {
-    const value = ingredientInput.value.trim();
-    
+    const value = cleanIngredient(ingredientInput.value);
+
     if (!value) {
-        showError('Please enter an ingredient');
+        showError("Add an ingredient first.");
         return;
     }
-    
-    if (ingredients.includes(value.toLowerCase())) {
-        showError('This ingredient is already added');
+
+    if (ingredients.includes(value)) {
+        showError("That ingredient is already in the mix.");
         return;
     }
-    
-    ingredients.push(value.toLowerCase());
-    ingredientInput.value = '';
+
+    ingredients.push(value);
+    ingredientInput.value = "";
     renderIngredients();
     clearError();
     ingredientInput.focus();
 }
 
-// Render ingredients
+function cleanIngredient(value) {
+    return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 function renderIngredients() {
-    ingredientsList.innerHTML = ingredients.map((ingredient, index) => `
-        <div class="ingredient-tag">
-            <span>${ingredient.charAt(0).toUpperCase() + ingredient.slice(1)}</span>
-            <button onclick="removeIngredient(${index})" title="Remove">×</button>
-        </div>
-    `).join('');
-    
+    ingredientsList.innerHTML = "";
+
+    ingredients.forEach((ingredient, index) => {
+        const tag = document.createElement("div");
+        tag.className = "ingredient-tag";
+
+        const label = document.createElement("span");
+        label.textContent = titleCase(ingredient);
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.setAttribute("aria-label", `Remove ${ingredient}`);
+        removeButton.textContent = "x";
+        removeButton.addEventListener("click", () => {
+            ingredients.splice(index, 1);
+            renderIngredients();
+        });
+
+        tag.append(label, removeButton);
+        ingredientsList.appendChild(tag);
+    });
+
     generateBtn.disabled = ingredients.length === 0;
 }
 
-// Remove ingredient
-function removeIngredient(index) {
-    ingredients.splice(index, 1);
+function clearAll() {
+    ingredients.splice(0, ingredients.length);
     renderIngredients();
+    recipeContent.classList.add("hidden");
+    stepsSection.classList.add("hidden");
+    emptyState.classList.remove("hidden");
+    recipeSection.classList.add("empty");
+    progressText.textContent = "0 of 0 done";
+    clearError();
+    ingredientInput.focus();
 }
 
-// Show error message
-function showError(message) {
-    errorMessage.textContent = message;
-    errorMessage.classList.add('active');
-    setTimeout(clearError, 3000);
-}
-
-// Clear error message
-function clearError() {
-    errorMessage.classList.remove('active');
-}
-
-// Generate recipe using mock data (replace with actual API call)
 async function generateRecipe() {
     if (ingredients.length === 0) {
-        showError('Please add at least one ingredient');
+        showError("Add at least one ingredient to generate a recipe.");
         return;
     }
-    
-    // Validate API key
-    if (API_KEY === 'YOUR_API_KEY_HERE') {
-        showError('⚠️ Please configure your API key in script.js to use AI recipe generation. Using example recipe instead.');
-        displayMockRecipe();
-        return;
-    }
-    
+
     showLoading(true);
     clearError();
-    
-    try {
-        const prepTime = document.getElementById('prepTimeFilter').value;
-        const skill = document.getElementById('skillFilter').value;
-        const dietary = document.getElementById('dietaryFilter').value;
-        
-        const prompt = buildPrompt(ingredients, prepTime, skill, dietary);
-        
-        // Call your AI API here
-        const recipe = await callRecipeAPI(prompt);
-        
-        displayRecipe(recipe);
-    } catch (error) {
-        console.error('Error:', error);
-        showError('Failed to generate recipe. Please try again.');
-        displayMockRecipe(); // Fallback to mock recipe
-    } finally {
-        showLoading(false);
-    }
-}
 
-// Build prompt for AI
-function buildPrompt(ingredientList, prepTime, skill, dietary) {
-    let prompt = `Create a recipe using these ingredients: ${ingredientList.join(', ')}.\n\n`;
-    
-    if (prepTime !== 'any') {
-        prompt += `Prep time should be ${prepTime} minutes or less.\n`;
-    }
-    
-    if (skill !== 'any') {
-        prompt += `Difficulty level: ${skill}.\n`;
-    }
-    
-    if (dietary !== 'none') {
-        prompt += `Dietary restriction: ${dietary}.\n`;
-    }
-    
-    prompt += `\nProvide the response in this exact JSON format:
-    {
-        "name": "Recipe Name",
-        "servings": "number",
-        "prepTime": "minutes",
-        "cookTime": "minutes",
-        "difficulty": "beginner|intermediate|advanced",
-        "description": "brief description",
-        "ingredients": ["ingredient 1", "ingredient 2"],
-        "steps": ["step 1", "step 2"],
-        "tips": ["tip 1", "tip 2"]
-    }`;
-    
-    return prompt;
-}
+    await new Promise((resolve) => setTimeout(resolve, 550));
 
-// Call Recipe API (OpenAI or Hugging Face)
-async function callRecipeAPI(prompt) {
-    // Example using OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`
-        },
-        body: JSON.stringify({
-            model: 'gpt-3.5-turbo',
-            messages: [
-                {
-                    role: 'system',
-                    content: 'You are a professional chef and recipe creator. Respond only with valid JSON.'
-                },
-                {
-                    role: 'user',
-                    content: prompt
-                }
-            ],
-            temperature: 0.7,
-            max_tokens: 1000
-        })
+    const recipe = createRecipe({
+        ingredients: [...ingredients],
+        prepTime: document.getElementById("prepTimeFilter").value,
+        skill: document.getElementById("skillFilter").value,
+        diet: document.getElementById("dietaryFilter").value
     });
-    
-    if (!response.ok) {
-        throw new Error('API request failed');
-    }
-    
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    
-    // Parse JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-        throw new Error('Invalid response format');
-    }
-    
-    return JSON.parse(jsonMatch[0]);
+
+    displayRecipe(recipe);
+    showLoading(false);
 }
 
-// Display mock recipe for demo
-function displayMockRecipe() {
-    const mockRecipe = {
-        name: `Pan-Seared ${ingredients[0] || 'Dish'} Delight`,
-        servings: 4,
-        prepTime: 15,
-        cookTime: 20,
-        difficulty: 'intermediate',
-        description: 'A delicious quick recipe using your available ingredients. This is a demo recipe - configure your API key for real AI-generated recipes!',
+function createRecipe({ ingredients: selectedIngredients, prepTime, skill, diet }) {
+    const style = recipeStyles[diet];
+    const incompatibleIngredients = selectedIngredients.filter((ingredient) => style.avoid.includes(ingredient));
+    const usableIngredients = selectedIngredients.filter((ingredient) => !style.avoid.includes(ingredient));
+    const coreIngredients = usableIngredients.length ? usableIngredients : [style.fallback];
+    const hero = coreIngredients[0];
+    const supporting = coreIngredients.slice(1, 4);
+    const totalTime = Number(prepTime);
+    const cookTime = Math.max(10, totalTime - 10);
+    const prepMinutes = totalTime - cookTime;
+    const recipeName = `${titleCase(hero)} ${style.title}`;
+    const pantryLine = pantryBasics.join(", ");
+
+    return {
+        name: recipeName,
+        description: `A practical ${dietLabel(diet)} recipe that uses ${listWords(coreIngredients)} and pantry basics without turning dinner into a project.`,
+        servings: coreIngredients.length > 3 ? 4 : 2,
+        prepTime: prepMinutes,
+        cookTime,
+        difficulty: titleCase(skill),
         ingredients: [
-            `2 portions of ${ingredients[0] || 'main ingredient'}`,
-            ...ingredients.slice(1).map(ing => `Fresh ${ing} to taste`),
-            'Salt and pepper',
-            'Olive oil',
-            'Garlic'
-        ],
-        steps: [
-            `Prepare your ${ingredients[0] || 'ingredients'} by cleaning and cutting into appropriate sizes`,
-            'Heat olive oil in a large pan over medium-high heat',
-            `Add the ${ingredients[0] || 'main ingredient'} and sear until golden brown (3-4 minutes per side)`,
-            `Add remaining ingredients: ${ingredients.slice(1).join(', ')} and cook until tender`,
-            'Season with salt and pepper to taste',
-            'Serve hot and enjoy!'
+            ...coreIngredients.map((ingredient) => `${titleCase(ingredient)}, prepped as needed`),
+            ...incompatibleIngredients.map((ingredient) => `Skip or swap ${titleCase(ingredient)} for a ${dietLabel(diet)} option`),
+            `Pantry basics: ${pantryLine}`,
+            style.sauce
         ],
         tips: [
-            'Don\'t overcrowd the pan - cook in batches if needed',
-            'Taste as you go and adjust seasonings',
-            'Let ingredients rest for 2 minutes before serving for better flavor'
-        ]
+            skillNotes[skill],
+            `Use ${titleCase(hero)} as the anchor and add the remaining ingredients in order of firmness.`,
+            incompatibleIngredients.length
+                ? `Diet filter applied: ${listWords(incompatibleIngredients.map(titleCase))} should be skipped or swapped.`
+                : diet === "flexible" ? "Add any leftover sauce, pickle, or fresh herbs at the end." : `Keep it ${dietLabel(diet)} by checking sauces and toppings before adding them.`
+        ],
+        steps: buildSteps(coreIngredients, supporting, style, totalTime)
     };
-    
-    displayRecipe(mockRecipe);
 }
 
-// Display recipe
+function buildSteps(coreIngredients, supporting, style, totalTime) {
+    const hero = titleCase(coreIngredients[0]);
+    const extras = supporting.length ? listWords(supporting.map(titleCase)) : "your remaining ingredients";
+
+    return [
+        {
+            text: `Wash, trim, and cut ${listWords(coreIngredients.map(titleCase))} into bite-size pieces.`,
+            note: "Keep firmer vegetables smaller so everything finishes together."
+        },
+        {
+            text: `Warm a wide pan with oil, then add ${hero} and cook until it picks up color.`,
+            note: "Color means flavor; stir less than you think."
+        },
+        {
+            text: `Fold in ${extras}, season with salt and pepper, and ${style.method}.`,
+            note: `Aim for a total cook time around ${Math.max(10, totalTime - 10)} minutes.`
+        },
+        {
+            text: `Add ${style.sauce}, then loosen with a splash of water if needed.`,
+            note: "The sauce should lightly coat, not drown, the ingredients."
+        },
+        {
+            text: "Taste, adjust seasoning, and serve while warm.",
+            note: "A final squeeze of lemon or pinch of herbs makes leftovers feel intentional."
+        }
+    ];
+}
+
 function displayRecipe(recipe) {
-    recipeSection.classList.remove('hidden');
-    recipeSection.classList.add('active');
-    
-    const recipeHTML = `
-        <div class="recipe-header">
-            <h2 class="recipe-title">${recipe.name}</h2>
-            <p>${recipe.description}</p>
+    emptyState.classList.add("hidden");
+    loadingSpinner.classList.add("hidden");
+    recipeSection.classList.remove("empty");
+    recipeContent.classList.remove("hidden");
+    stepsSection.classList.remove("hidden");
+
+    recipeContent.innerHTML = `
+        <div class="recipe-hero">
+            <div>
+                <p class="eyebrow">Generated recipe</p>
+                <h2 class="recipe-title">${escapeHtml(recipe.name)}</h2>
+                <p class="recipe-description">${escapeHtml(recipe.description)}</p>
+            </div>
             <div class="recipe-meta">
-                <div class="meta-item">👥 <span>${recipe.servings} servings</span></div>
-                <div class="meta-item">⏱️ <span>${recipe.prepTime} min prep</span></div>
-                <div class="meta-item">🔥 <span>${recipe.cookTime} min cook</span></div>
-                <div class="meta-item">📊 <span class="capitalize">${recipe.difficulty}</span> level</div>
+                ${metaItem("Serves", recipe.servings)}
+                ${metaItem("Prep", `${recipe.prepTime} min`)}
+                ${metaItem("Cook", `${recipe.cookTime} min`)}
+                ${metaItem("Skill", recipe.difficulty)}
             </div>
         </div>
-        
-        <div class="recipe-ingredients">
-            <h4>Ingredients</h4>
-            <ul class="ingredients-list-recipe">
-                ${recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
-            </ul>
-        </div>
-        
-        ${recipe.tips ? `
-            <div class="recipe-tips" style="margin: 20px 0; padding: 15px; background: rgba(139, 92, 246, 0.1); border-radius: 8px; border-left: 4px solid #8b5cf6;">
-                <h4 style="margin-bottom: 10px; color: #8b5cf6;">💡 Chef's Tips</h4>
-                <ul style="margin-left: 20px; color: #cbd5e1;">
-                    ${recipe.tips.map(tip => `<li>${tip}</li>`).join('')}
-                </ul>
+
+        <div class="recipe-columns">
+            <div class="recipe-block">
+                <h3>Ingredients</h3>
+                <ul>${recipe.ingredients.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
             </div>
-        ` : ''}
+            <div class="recipe-block">
+                <h3>Alchemist notes</h3>
+                <ul>${recipe.tips.map((tip) => `<li>${escapeHtml(tip)}</li>`).join("")}</ul>
+            </div>
+        </div>
     `;
-    
-    recipeContent.innerHTML = recipeHTML;
-    
-    // Display steps checklist
+
     displaySteps(recipe.steps);
-    
-    // Scroll to recipe
-    setTimeout(() => {
-        recipeSection.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    recipeSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// Display cooking steps with checklist
-function displaySteps(steps) {
-    stepsSection.classList.remove('hidden');
-    stepsSection.classList.add('active');
-    
-    stepsList.innerHTML = steps.map((step, index) => `
-        <div class="step-item" data-step="${index}">
-            <input 
-                type="checkbox" 
-                class="step-checkbox" 
-                onchange="toggleStep(this, ${index})"
-            >
-            <div class="step-number">${index + 1}</div>
-            <div class="step-content">
-                <div class="step-text">${step}</div>
-            </div>
+function metaItem(label, value) {
+    return `
+        <div class="meta-item">
+            <span class="meta-label">${escapeHtml(label)}</span>
+            <span class="meta-value">${escapeHtml(String(value))}</span>
         </div>
-    `).join('');
+    `;
 }
 
-// Toggle step completion
-function toggleStep(checkbox, index) {
-    const stepItem = document.querySelector(`[data-step="${index}"]`);
-    if (checkbox.checked) {
-        stepItem.classList.add('completed');
-    } else {
-        stepItem.classList.remove('completed');
-    }
+function displaySteps(steps) {
+    stepsList.innerHTML = "";
+
+    steps.forEach((step, index) => {
+        const item = document.createElement("label");
+        item.className = "step-item";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "step-checkbox";
+        checkbox.addEventListener("change", updateProgress);
+
+        const content = document.createElement("div");
+        const text = document.createElement("p");
+        text.className = "step-text";
+        text.textContent = `${index + 1}. ${step.text}`;
+
+        const note = document.createElement("p");
+        note.className = "step-note";
+        note.textContent = step.note;
+
+        content.append(text, note);
+        item.append(checkbox, content);
+        stepsList.appendChild(item);
+    });
+
+    updateProgress();
 }
 
-// Show/hide loading spinner
+function updateProgress() {
+    const checkboxes = [...stepsList.querySelectorAll(".step-checkbox")];
+    const completed = checkboxes.filter((checkbox) => checkbox.checked).length;
+
+    checkboxes.forEach((checkbox) => {
+        checkbox.closest(".step-item").classList.toggle("completed", checkbox.checked);
+    });
+
+    progressText.textContent = `${completed} of ${checkboxes.length} done`;
+}
+
 function showLoading(show) {
+    generateBtn.disabled = show || ingredients.length === 0;
+
     if (show) {
-        loadingSpinner.classList.remove('hidden');
-        loadingSpinner.classList.add('active');
-        generateBtn.disabled = true;
+        emptyState.classList.add("hidden");
+        recipeContent.classList.add("hidden");
+        stepsSection.classList.add("hidden");
+        loadingSpinner.classList.remove("hidden");
     } else {
-        loadingSpinner.classList.remove('active');
-        loadingSpinner.classList.add('hidden');
-        generateBtn.disabled = false;
+        loadingSpinner.classList.add("hidden");
     }
 }
 
-// Initialize
-window.addEventListener('DOMContentLoaded', () => {
-    generateBtn.disabled = true;
-    console.log('🔮 Recipe Alchemist initialized!');
-    console.log('📝 To enable AI recipe generation, add your API key to the script.js file');
-});
+function showError(message) {
+    errorMessage.textContent = message;
+    errorMessage.classList.add("active");
+}
+
+function clearError() {
+    errorMessage.textContent = "";
+    errorMessage.classList.remove("active");
+}
+
+function titleCase(value) {
+    return value
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
+function dietLabel(diet) {
+    return diet === "flexible" ? "flexible" : diet.replace("-", " ");
+}
+
+function listWords(items) {
+    if (items.length <= 1) {
+        return items[0] || "your ingredients";
+    }
+
+    if (items.length === 2) {
+        return `${items[0]} and ${items[1]}`;
+    }
+
+    return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+function escapeHtml(value) {
+    return value.replace(/[&<>"']/g, (character) => {
+        const entities = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        };
+        return entities[character];
+    });
+}
+
+renderIngredients();
