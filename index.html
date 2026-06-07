@@ -3,11 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>What's in My Fridge? - Recipe Alchemist</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>
-        hello this is a document
-    </h1>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🔮 What's in My Fridge?</h1>
+                <p class="subtitle">Recipe Alchemist - Transform your ingredients into culinary magic</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Ingredients Section -->
+            <section class="ingredients-section">
+                <h2>Your Ingredients</h2>
+                <div class="ingredient-input-group">
+                    <input 
+                        type="text" 
+                        id="ingredientInput" 
+                        placeholder="Enter an ingredient (e.g., chicken, tomato, pasta)" 
+                        class="ingredient-input"
+                    >
+                    <button id="addIngredientBtn" class="btn btn-add">+ Add</button>
+                </div>
+                <div id="ingredientsList" class="ingredients-list"></div>
+                <p class="hint">Press Enter or click Add to add ingredients</p>
+            </section>
+
+            <!-- Filters Section -->
+            <section class="filters-section">
+                <h2>Preferences</h2>
+                <div class="filters-grid">
+                    <!-- Prep Time Filter -->
+                    <div class="filter-group">
+                        <label for="prepTimeFilter">Prep Time</label>
+                        <select id="prepTimeFilter" class="filter-select">
+                            <option value="any">Any</option>
+                            <option value="15">≤ 15 minutes</option>
+                            <option value="30">≤ 30 minutes</option>
+                            <option value="60">≤ 1 hour</option>
+                            <option value="120">≤ 2 hours</option>
+                        </select>
+                    </div>
+
+                    <!-- Cooking Skill Filter -->
+                    <div class="filter-group">
+                        <label for="skillFilter">Cooking Skill</label>
+                        <select id="skillFilter" class="filter-select">
+                            <option value="any">Any</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+
+                    <!-- Dietary Restrictions -->
+                    <div class="filter-group">
+                        <label for="dietaryFilter">Dietary Restrictions</label>
+                        <select id="dietaryFilter" class="filter-select">
+                            <option value="none">None</option>
+                            <option value="vegetarian">Vegetarian</option>
+                            <option value="vegan">Vegan</option>
+                            <option value="gluten-free">Gluten-Free</option>
+                            <option value="keto">Keto</option>
+                            <option value="paleo">Paleo</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Generate Button -->
+            <div class="generate-section">
+                <button id="generateBtn" class="btn btn-generate">✨ Generate Recipe</button>
+            </div>
+
+            <!-- Recipe Display Section -->
+            <section id="recipeSection" class="recipe-section hidden">
+                <h2>Your Recipe</h2>
+                
+                <div id="recipeContent" class="recipe-content">
+                    <!-- Recipe will be loaded here -->
+                </div>
+
+                <!-- Cooking Steps Checklist -->
+                <div id="stepsSection" class="steps-section hidden">
+                    <h3>Cooking Steps</h3>
+                    <div id="stepsList" class="steps-list">
+                        <!-- Steps will be loaded here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Brewing your recipe magic...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-message hidden"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>🔮 Recipe Alchemist - Powered by AI ✨</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
